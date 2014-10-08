@@ -3,6 +3,8 @@ kineticGFR
 
 The calculator combines a calculator for eGFR-MDRD (1,2,3) and a calculator for kineticGFR (4).
 
+Please try a Demo of the kinetic GFR calculator at http://www.konsil.at/kinetic/
+
 ## DESCRIPTION ##
 
 * Choice of GFR estimator affects GFR calculations. MDRD was used in reference to Chen et al. (4).
