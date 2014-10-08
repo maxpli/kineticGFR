@@ -1,0 +1,185 @@
+<!DOCTYPE html> 
+<html>
+<head>
+	<title>Kinetic GFR Calculator</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.2/jquery.mobile-1.4.2.min.css" />
+	<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+	<script src="http://code.jquery.com/mobile/1.4.2/jquery.mobile-1.4.2.min.js"></script>
+	<script>
+
+		function calculateGFR (creatinine,age,femalesex,black,idms) {
+			var multiplier = 186.0;
+			if (idms) {
+			     multiplier = 175.0;
+			}
+			return (
+			        multiplier
+			        * Math.pow(creatinine,-1.154)
+			        * Math.pow(age, -0.203)
+			        //* Math.pow(Math.max(18,age), -0.203)
+			        * (femalesex ? 0.742 : 1.0)
+			        * (black ? 1.212 : 1.0)
+			        );
+		};
+		function changeUnit (umol) {
+			//console.log(umol);
+			if (umol==1) {
+				$('.unit').html('(&mu;mol/L)');
+			} else {
+				$('.unit').html('(mg/dL)');
+			}
+		};
+
+		$( document ).ready(function() {
+    		//console.log($('input#maxrise').val());
+    		$( "#target" ).submit(function( event ) {
+				$("#errormessage").empty();				
+				var validate = true;
+				$('#target input').each(function(){
+    				//console.log($(this));
+    				if($(this).val() === '')
+        			validate = false;
+				});
+				if(!validate){
+					$("#errormessage").html('Please enter data into all form fields!');
+    					return false;
+				} else { 
+					var plasmaCreatinineNow = parseFloat($('input#cpcr').val().replace(',', '.'));
+					var plasmaCreatininePast = parseFloat($('input#ppcr').val().replace(',', '.'));
+					var femalesex = $('#femalesex').prop("checked");
+					var idms = $('#idms').val() == 1;
+    					var black = $('#race').val() == 1;
+					var umol = $('#umol').val() == 1;
+					var age = parseFloat($('input#age').val().replace(',', '.'));
+
+					var plasmaCreatinineStable = parseFloat($('input#sspcr').val().replace(',', '.'));
+					if (umol) {
+						plasmaCreatinineStable = plasmaCreatinineStable/88.4;
+					}
+					var mdrd = calculateGFR(plasmaCreatinineStable,age,femalesex,black,idms);
+					
+					var timeIntervalCreatinineMeasurements = parseFloat($('input#time').val().replace(',', '.'));
+					var maximalRisePlasmaCreatininePerDay = parseFloat($('input#maxrise').val().replace(',', '.'));
+					
+					if (umol) {
+						plasmaCreatininePast = plasmaCreatininePast/88.4;
+						plasmaCreatinineNow = plasmaCreatinineNow/88.4;
+					}
+					var meanPlasmaCreatinine = (plasmaCreatininePast + plasmaCreatinineNow)/2;
+					var changePlasmaCreatinine = (plasmaCreatinineNow-plasmaCreatininePast);
+					
+					var changeRatio = (24*changePlasmaCreatinine)/(timeIntervalCreatinineMeasurements*maximalRisePlasmaCreatininePerDay);
+					var multiplicatoryFactor = (1-changeRatio);
+					
+					if (changeRatio>1 || multiplicatoryFactor<0) {
+						$("#errormessage").html('The maximal rise in plasma creatinine per day must be greater than actual change per day! Please change the maximal rise in the preferences above.');
+						return false;
+					} else {
+						var kGfr = ((plasmaCreatinineStable*mdrd)/meanPlasmaCreatinine)*multiplicatoryFactor;
+						var resStr = '<strong>Steady-State GFR (MDRD)</strong>: '+mdrd.toFixed(1)+' ml/min/1.73m<sup>2</sup><br>' +
+						'<strong>Kinetic GFR</strong>: '+kGfr.toFixed(1)+' ml/min/1.73m<sup>2</sup>';
+						$('#result').html(resStr);
+					}
+
+				}
+			  	event.preventDefault();
+			});
+		});
+	</script>
+</head>
+
+<body>
+	<div data-role="page">
+
+		<div data-role="header">
+			<h1>Kinetic GFR</h1>
+		</div><!-- /header -->
+
+		<div role="main" class="ui-content">
+			<form id="target" action="destination.html">
+			<label for="cpcr"><strong>Current</strong> Plasma Creatinine <span class="unit">(mg/dl)</span></label>
+			<input type="text" name="cpcr" id="cpcr" value="">
+			<label for="ppcr"><strong>Past</strong> Plasma Creatinine <span class="unit">(mg/dl)</span></label>
+			<input type="text" name="ppcr" id="ppcr" value="">
+			<label for="time"><strong>Hours</strong> between Current and Past Plasma Creatinine (h)</label>
+			<input type="text" name="time" id="time" value="">
+			<label for="sspcr"><strong>Steady-State</strong> Plasma Creatinine <span class="unit">(mg/dl)</span></label>
+			<input type="text" name="sspcr" id="sspcr" value="">
+			<fieldset data-role="controlgroup" data-type="horizontal" data-mini="true">
+			    <legend><strong>Sex</strong></legend>
+			        <input type="radio" name="sex" id="malesex" value="0" checked="checked">
+			        <label for="malesex">Male</label>
+			        <input type="radio" name="sex" id="femalesex" value="1">
+			        <label for="femalesex">Female</label>
+			</fieldset>
+			<label for="race"><strong>African American Race</strong></label>
+		    <select name="race" id="race" data-role="slider">
+		        <option value="0" selected="selected">No</option>
+		        <option value="1">Yes</option>
+		    </select>
+		    <label for="age"><strong>Age</strong> (years)</label>
+			<input type="text" name="age" id="age" value="">
+		    <div data-role="collapsible">
+			    <h4>Preferences</h4>
+				<label for="maxrise">Maximal rise in plasma creatinine per day (mg/dl/24h) (~1.3 to 2.0 mg/dl):</label>
+				<input type="text" name="maxrise" id="maxrise" value="1.5">
+				<label for="idms">Creatinine methods recalibrated to be traceable to IDMS:</label>
+		        	<select name="idms" id="idms" data-role="slider">
+		            		<option value="0">No</option>
+		            		<option value="1" selected="selected">Yes</option>
+		        	</select>
+				<label for="umol">Serum creatinine unit (mg/dL vs &mu;mol/L):</label>
+		        	<select name="umol" id="umol" data-role="slider" onchange="changeUnit(this.value)">
+		            		<option value="1">&mu;mol/L</option>
+		            		<option value="0" selected="selected">mg/dL</option>
+		        	</select>
+			</div>
+			<br>
+			<div id="errormessage" style="color:red;"></div>
+			<input type="submit" value="Submit">
+			<input type="reset" value="Clear">
+			</form>
+			<br>
+			<div id="result">
+			</div>
+			<br>
+			<p><strong>Description</strong>:<br>
+The calculator combines a calculator for eGFR-MDRD (1,2,3) and a calculator for kineticGFR (4).<br>
+The following variables significantly affect calculated outputs:<br>
+<ul>
+<li>Choice of GFR estimator affects GFR calculations. MDRD was used in reference to Chen et al. (4).</li>
+<li>According to the National Kidney Foundation, laboratories should now be using a creatinine method that has been standardized or tracable to isotope dilution mass spectrometry (IDMS). The way creatinine levels are calibrated affects the GFR estimating equation. (3)</li>
+<li>The creatinine measurement unit (&mu;mol/L versus mg/dL) effects the GFR estimating equation. Creatinine levels in &mu;mol/L are converted to mg/dL in our calculator by dividing them by 88.4. (5)</li>
+<li>The value maximal rise in plasma creatinine per day is ambiguous. Ideally, the value should come from the individual patient, but not all patients with AKI go on to develop anuria or are then started on intermittent hemodialysis. See Chen et al. for a discussion of this topic. (4)</li>
+</ul>
+</p>
+			<p><strong>References</strong>:<br>
+<ol>
+<li>A more accurate method to estimate glomerular filtration rate from serum creatinine: a new prediction equation. Modification of Diet in Renal Disease Study Group. Levey AS, Bosch JP, Lewis JB, Greene T, Rogers N, Roth D. Ann Intern Med. 1999 Mar 16;130(6):461-70. PMID: 10075613 [PubMed - indexed for MEDLINE]</li>
+<li>Levey A, Greene T, Kusek J, Beck G, Group MS. A simplified equation to predict glomerular filtration rate from serum creatinine. J Am Soc Nephrol 2000;11:155A</li>
+<li>Expressing the Modification of Diet in Renal Disease Study equation for estimating glomerular filtration rate with standardized serum creatinine values. Levey AS, Coresh J, Greene T, Marsh J, Stevens LA, Kusek JW, Van Lente F; Chronic Kidney Disease Epidemiology Collaboration. Clin Chem. 2007 Apr;53(4):766-72. Epub 2007 Mar 1. PMID: 17332152 [PubMed - indexed for MEDLINE]</li>
+<li><b>Retooling the creatinine clearance equation to estimate kinetic GFR when the plasma creatinine is changing acutely.</b> Chen S. J Am Soc Nephrol. 2013 May;24(6):877-88. doi: 10.1681/ASN.2012070653. Epub 2013 May 23. PMID: 23704286 [PubMed - indexed for MEDLINE]</li>
+<li>http://en.wikipedia.org/w/index.php?title=Renal_function&oldid=624916087</li>
+</ol>
+</p>
+			<p><strong>Disclaimer</strong>:<br><br>All information is provided for educational purposes only.<br>
+			This information should not be used for the diagnosis or treatment of any health problem or disease.<br>
+			<b>THIS INFORMATION IS NOT INTENDED TO REPLACE CLINICAL JUDGMENT OR GUIDE INDIVIDUAL PATIENT CARE IN ANY MANNER.</b></p>
+			<p>We'd love to hear your <a href="mailto:plischke@gmail.com?subject=kinGFR">comments</a>!</p>
+			<p>v 0.0.4</p>
+		</div><!-- /content -->
+
+	</div><!-- /page -->
+</body>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-43104602-1', 'konsil.at');
+  ga('send', 'pageview');
+
+</script>
+</html>
