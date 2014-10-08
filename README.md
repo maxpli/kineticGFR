@@ -8,7 +8,7 @@ The calculator combines a calculator for eGFR-MDRD (1,2,3) and a calculator for 
 * Choice of GFR estimator affects GFR calculations. MDRD was used in reference to Chen et al. (4).
 * According to the National Kidney Foundation, laboratories should now be using a creatinine method that has been standardized or tracable to isotope dilution mass spectrometry (IDMS). The way creatinine levels are calibrated affects the GFR estimating equation. (3)
 * The creatinine measurement unit (&mu;mol/L versus mg/dL) affects the GFR estimating equation. Creatinine levels in &mu;mol/L are converted to mg/dL in our calculator by dividing them by 88.4. (5)
-* The value maximal rise in plasma creatinine per day is ambiguous. Ideally, the value should come from the individual patient, but not all patients with AKI go on to develop anuria or are then started on intermittent hemodialysis. See Chen et al. for a discussion of this topic. (4)
+* The value maximal rise in plasma creatinine per day is ambiguous. See Chen et al. for a discussion of this topic. (4)
 
 ## References ##
 
